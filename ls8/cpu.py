@@ -5,9 +5,22 @@ import sys
 class CPU:
     """Main CPU class."""
 
+    # Add the constructor to cpu.py
+    # Add list properties to the CPU class to hold 256 bytes of memory and 8 general-purpose registers.
     def __init__(self):
         """Construct a new CPU."""
-        pass
+        self.pc
+        self.ram = [0] * 256
+        self.register = [0] * 8
+
+    # Add RAM functions
+    # ram_read() should accept the address to read and return the value stored there.
+    # raw_write() should accept a value to write, and the address to write it to.
+    def ram_read(self, ram_address):
+        return self.ram[ram_address]
+
+    def ram_write(self, ram_write, ram_address):
+        self.ram[ram_address] = ram_write
 
     def load(self):
         """Load a program into memory."""
@@ -60,6 +73,18 @@ class CPU:
 
         print()
 
+    # read the memory address that's stored in register PC, and store that result in IR, the Instruction Register.
+    # perform the actions needed for the instruction per the LS-8 spec. Maybe an if-elif cascade...?
     def run(self):
         """Run the CPU."""
-        pass
+        pc = 0  # program counter
+        running = True
+
+        HLT = 0b00000001
+
+        while running:
+            # Using ram_read(), read the bytes at PC+1 and PC+2 from RAM into variables operand_a and operand_b in case the instruction needs them.
+            operand_a = self.ram_read(self.pc + 1)
+            operand_b = self.ram_read(self.pc + 2)
+
+            
