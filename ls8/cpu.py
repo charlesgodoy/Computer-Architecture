@@ -96,9 +96,10 @@ class CPU:
             elif command == LDI:
                 # int(self.reg[operand_a])
                 # self.pc += 1
+                print("Loaded registerA with the value at the memory address stored in registerB.")
                 self.reg[operand_a] = operand_b
                 self.pc += 3
 
             elif command == PRN:
-                print(self.reg[operand_a])
+                print(f"PRN: {self.reg[operand_a]}")
                 self.pc += 2
