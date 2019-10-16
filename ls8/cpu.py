@@ -22,26 +22,46 @@ class CPU:
     def ram_write(self, ram_write, ram_address):
         self.ram[ram_address] = ram_write
 
-    def load(self):
+    def load(self, program):
         """Load a program into memory."""
 
-        address = 0
+        
+        try:
+            address = 0
+            with open(program) as f:
+                for line in f:
+                    comment_split = line.split("#")
+                
+                    num = comment_split[0].strip()
+                
+                    try:
+                        self.ram_write(int(num, 2), address)
+                        address += 1
+                    except ValueError:
+                        continue
 
-        # For now, we've just hardcoded a program:
+            print("self.ram: ", self.ram)
+        
+        except FileNotFoundError:
+            print(f"{sys.argv[0]}: {sys.argv[1]} not found")
+            sys.exit(2)
 
-        program = [
-            # From print8.ls8
-            0b10000010, # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111, # PRN R0
-            0b00000000,
-            0b00000001, # HLT
-        ]
+        # program = [
+        #     # From print8.ls8
+            # 0b10000010, # LDI R0,8
+            # 0b00000000,
+            # 0b00001000,
+            # 0b01000111, # PRN R0
+            # 0b00000000,
+            # 0b10100010,     # MUL next 2 registers
+            # 0b00000010,     # 2
+            # 0b00000011,     # 3
+            # 0b00000001, # HLT
+        # ]
 
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+        # for instruction in program:
+        #     self.ram[address] = instruction
+        #     address += 1
 
 
     def alu(self, op, reg_a, reg_b):
@@ -50,6 +70,8 @@ class CPU:
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
         #elif op == "SUB": etc
+        elif op == "MUL":
+            self.reg[reg_a] *= self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -82,13 +104,19 @@ class CPU:
         HLT = 0b00000001
         LDI = 0b10000010
         PRN = 0b01000111
+        MUL = 0b10100010
+        PUSH = 0b01000101
+        POP = 0b01000110
+
+        SP = 7  # points to which register number that holds the address top element of the stack
+        self.reg[SP] = len(self.ram) - 1    # initially stack is at the last address in memory
 
         while running:
             # Using ram_read(), read the bytes at PC+1 and PC+2 from RAM into variables operand_a and operand_b in case the instruction needs them.
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
-
             command = self.ram[self.pc]     # ram contains all instructions to execute, vales to read and write, etc and uses program counter to keep track of current index location
+
 
             if command == HLT:  # ends program
                 running = False
@@ -96,10 +124,32 @@ class CPU:
             elif command == LDI:
                 # int(self.reg[operand_a])
                 # self.pc += 1
-                print("Loaded registerA with the value at the memory address stored in registerB.")
+                print("LDI: Loaded registerA with the value at the memory address stored in registerB.")
                 self.reg[operand_a] = operand_b
+                print(f"LDI: {self.reg[operand_a]}")
+                self.pc += 3
+
+            elif command == MUL:
+                print("Mul: registerA * registerB and store value in registerA.")
+                self.alu("MUL", operand_a, operand_b)
                 self.pc += 3
 
             elif command == PRN:
                 print(f"PRN: {self.reg[operand_a]}")
+                self.pc += 2
+
+            elif command == PUSH:
+                print("Push the value in the given register on the stack")
+                reg_number = self.ram[self.pc + 1]
+                reg_val = self.reg[reg_number]
+                self.reg[SP] -= 1  # Decrement SP
+                self.ram[self.reg[SP]] = reg_val
+                self.pc += 2
+
+            elif command == POP:
+                print("Pop the value from the top of the stack and store it in the PC")
+                reg_number = self.ram[self.pc + 1]
+                reg_val = self.ram[self.reg[SP]]
+                self.reg[reg_number] = reg_val
+                self.reg[SP] += 1
                 self.pc += 2
